@@ -1,1 +1,119 @@
-TEST
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AOV 英雄隨機器</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      background-color: #1b1b1b;
+      color: #fff;
+      text-align: center;
+      padding: 30px;
+    }
+    h1 { font-size: 2rem; margin-bottom: 20px; }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover { background-color: #45a049; }
+    .result {
+      margin-top: 20px;
+      font-size: 1.3rem;
+      background: #222;
+      padding: 15px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+    .checkbox-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 600px;
+      margin: 20px auto;
+      background: #2a2a2a;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    label { margin: 5px 10px; display: flex; align-items: center; }
+  </style>
+</head>
+<body>
+  <h1>AOV 英雄隨機器</h1>
+  <button id="randomBtn">🎲 隨機生成</button>
+
+  <div class="result" id="result">載入中...</div>
+
+  <h3>排除不想抽到的英雄：</h3>
+  <div class="checkbox-list" id="heroList"></div>
+
+  <script>
+    let heroes = [];
+    let skills = [];
+    let lanes = [];
+
+    async function loadData() {
+      try {
+        const response = await fetch('DB.json');
+        const data = await response.json();
+        heroes = data.heroes;
+        skills = data.skills;
+        lanes = data.lanes;
+        renderHeroList();
+        document.getElementById("result").textContent = "按下按鈕開始抽取！";
+      } catch (error) {
+        document.getElementById("result").textContent = "❌ 資料載入失敗，請確認 DB.json 是否存在";
+        console.error(error);
+      }
+    }
+
+    function renderHeroList() {
+      const heroListDiv = document.getElementById("heroList");
+      heroListDiv.innerHTML = "";
+      heroes.forEach((hero, index) => {
+        const label = document.createElement("label");
+        label.innerHTML = `<input type="checkbox" value="${hero}" id="hero${index}"> ${hero}`;
+        heroListDiv.appendChild(label);
+      });
+    }
+
+    function getRandomItem(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    document.getElementById("randomBtn").addEventListener("click", () => {
+      if (heroes.length === 0) {
+        alert("⚠️ 資料尚未載入完成！");
+        return;
+      }
+
+      const excludedHeroes = Array.from(document.querySelectorAll("input[type=checkbox]:checked")).map(c => c.value);
+      const availableHeroes = heroes.filter(hero => !excludedHeroes.includes(hero));
+
+      if (availableHeroes.length === 0) {
+        alert("⚠️ 請至少保留一位英雄可抽！");
+        return;
+      }
+
+      const hero = getRandomItem(availableHeroes);
+      const skill = getRandomItem(skills);
+      const lane = getRandomItem(lanes);
+
+      document.getElementById("result").innerHTML = `
+        <b>英雄：</b> ${hero}<br>
+        <b>挑戰者技能：</b> ${skill}<br>
+        <b>分路：</b> ${lane}
+      `;
+    });
+
+    loadData();
+  </script>
+</body>
+</html>
