@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AOV 隨機生成器（分開抽）</title>
+  <title>AOV 隨機生成器（下拉排除）</title>
   <style>
     body {
       font-family: "Microsoft JhengHei", sans-serif;
@@ -33,42 +33,39 @@
       border-radius: 8px;
       display: inline-block;
     }
-    .checkbox-list {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      max-width: 600px;
-      margin: 10px auto;
+    select {
       background: #2a2a2a;
-      padding: 8px;
-      border-radius: 10px;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 6px;
+      margin-top: 8px;
+      min-width: 200px;
     }
-    label { margin: 4px 10px; display: flex; align-items: center; }
-    .section { margin-bottom: 30px; }
   </style>
 </head>
 <body>
-  <h1>AOV 隨機生成器（分開抽）</h1>
+  <h1>AOV 隨機生成器（下拉排除）</h1>
 
   <div class="section" id="heroSection">
     <h2>英雄</h2>
+    <select id="heroExclude" multiple></select><br>
     <button onclick="draw('hero')">🎲 隨機英雄</button>
     <div class="result" id="heroResult">還沒抽取</div>
-    <div class="checkbox-list" id="heroList"></div>
   </div>
 
   <div class="section" id="skillSection">
     <h2>挑戰者技能</h2>
+    <select id="skillExclude" multiple></select><br>
     <button onclick="draw('skill')">🎲 隨機技能</button>
     <div class="result" id="skillResult">還沒抽取</div>
-    <div class="checkbox-list" id="skillList"></div>
   </div>
 
   <div class="section" id="laneSection">
     <h2>分路</h2>
+    <select id="laneExclude" multiple></select><br>
     <button onclick="draw('lane')">🎲 隨機分路</button>
     <div class="result" id="laneResult">還沒抽取</div>
-    <div class="checkbox-list" id="laneList"></div>
   </div>
 
   <script>
@@ -82,22 +79,23 @@
         skills = data.skills;
         lanes = data.lanes;
 
-        renderList('hero', heroes);
-        renderList('skill', skills);
-        renderList('lane', lanes);
+        populateSelect('heroExclude', heroes);
+        populateSelect('skillExclude', skills);
+        populateSelect('laneExclude', lanes);
       } catch (err) {
         console.error(err);
         alert("資料載入失敗，請確認 DB.json 是否存在");
       }
     }
 
-    function renderList(type, items) {
-      const container = document.getElementById(type + 'List');
-      container.innerHTML = '';
-      items.forEach((item, idx) => {
-        const label = document.createElement('label');
-        label.innerHTML = `<input type="checkbox" value="${item}" id="${type}${idx}"> ${item}`;
-        container.appendChild(label);
+    function populateSelect(selectId, items) {
+      const select = document.getElementById(selectId);
+      select.innerHTML = "";
+      items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        select.appendChild(option);
       });
     }
 
@@ -107,29 +105,22 @@
 
     function draw(type) {
       let sourceArr = [];
-      let resultDiv;
+      let selectId, resultDiv;
 
-      if(type === 'hero') {
-        sourceArr = heroes;
-        resultDiv = document.getElementById('heroResult');
-      } else if(type === 'skill') {
-        sourceArr = skills;
-        resultDiv = document.getElementById('skillResult');
-      } else if(type === 'lane') {
-        sourceArr = lanes;
-        resultDiv = document.getElementById('laneResult');
-      }
+      if(type === 'hero') { sourceArr = heroes; selectId='heroExclude'; resultDiv=document.getElementById('heroResult'); }
+      if(type === 'skill') { sourceArr = skills; selectId='skillExclude'; resultDiv=document.getElementById('skillResult'); }
+      if(type === 'lane') { sourceArr = lanes; selectId='laneExclude'; resultDiv=document.getElementById('laneResult'); }
 
-      const excluded = Array.from(document.querySelectorAll(`#${type}List input[type=checkbox]:checked`)).map(c => c.value);
+      const select = document.getElementById(selectId);
+      const excluded = Array.from(select.selectedOptions).map(o => o.value);
       const available = sourceArr.filter(i => !excluded.includes(i));
 
-      if(available.length === 0) {
+      if(available.length === 0){
         alert("⚠️ 請至少保留一個可抽項目！");
         return;
       }
 
-      const picked = getRandomItem(available);
-      resultDiv.textContent = picked;
+      resultDiv.textContent = getRandomItem(available);
     }
 
     loadData();
