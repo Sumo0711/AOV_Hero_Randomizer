@@ -33,6 +33,17 @@
       border-radius: 8px;
       display: inline-block;
     }
+    .checkbox-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 600px;
+      margin: 10px auto;
+      background: #2a2a2a;
+      padding: 8px;
+      border-radius: 10px;
+    }
+    label { margin: 4px 10px; display: flex; align-items: center; }
     select {
       background: #2a2a2a;
       color: #fff;
@@ -42,27 +53,41 @@
       margin-top: 8px;
       min-width: 200px;
     }
+    /* 桌機隱藏 select，多選下拉只顯示手機 */
+    @media (min-width: 768px) {
+      select { display: none; }
+    }
+    /* 手機隱藏勾選框 */
+    @media (max-width: 767px) {
+      .checkbox-list { display: none; }
+    }
   </style>
 </head>
 <body>
   <h1>AOV 隨機生成器</h1>
 
+  <!-- 英雄 -->
   <div class="section" id="heroSection">
     <h2>英雄</h2>
+    <div class="checkbox-list" id="heroList"></div>
     <select id="heroExclude" multiple></select><br>
     <button onclick="draw('hero')">隨機英雄</button>
     <div class="result" id="heroResult">還沒抽取</div>
   </div>
 
+  <!-- 技能 -->
   <div class="section" id="skillSection">
     <h2>挑戰者技能</h2>
+    <div class="checkbox-list" id="skillList"></div>
     <select id="skillExclude" multiple></select><br>
     <button onclick="draw('skill')">隨機技能</button>
     <div class="result" id="skillResult">還沒抽取</div>
   </div>
 
+  <!-- 分路 -->
   <div class="section" id="laneSection">
     <h2>分路</h2>
+    <div class="checkbox-list" id="laneList"></div>
     <select id="laneExclude" multiple></select><br>
     <button onclick="draw('lane')">隨機分路</button>
     <div class="result" id="laneResult">還沒抽取</div>
@@ -79,6 +104,11 @@
         skills = data.skills;
         lanes = data.lanes;
 
+        // 桌機勾選框
+        renderList('hero', heroes);
+        renderList('skill', skills);
+        renderList('lane', lanes);
+        // 手機下拉
         populateSelect('heroExclude', heroes);
         populateSelect('skillExclude', skills);
         populateSelect('laneExclude', lanes);
@@ -88,9 +118,19 @@
       }
     }
 
+    function renderList(type, items) {
+      const container = document.getElementById(type + 'List');
+      container.innerHTML = '';
+      items.forEach((item, idx) => {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" value="${item}" id="${type}${idx}"> ${item}`;
+        container.appendChild(label);
+      });
+    }
+
     function populateSelect(selectId, items) {
       const select = document.getElementById(selectId);
-      select.innerHTML = "";
+      select.innerHTML = '';
       items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
@@ -105,21 +145,28 @@
 
     function draw(type) {
       let sourceArr = [];
-      let selectId, resultDiv;
+      let resultDiv;
+      let excluded = [];
 
-      if(type === 'hero') { sourceArr = heroes; selectId='heroExclude'; resultDiv=document.getElementById('heroResult'); }
-      if(type === 'skill') { sourceArr = skills; selectId='skillExclude'; resultDiv=document.getElementById('skillResult'); }
-      if(type === 'lane') { sourceArr = lanes; selectId='laneExclude'; resultDiv=document.getElementById('laneResult'); }
+      if(type === 'hero') { sourceArr = heroes; resultDiv = document.getElementById('heroResult'); }
+      if(type === 'skill') { sourceArr = skills; resultDiv = document.getElementById('skillResult'); }
+      if(type === 'lane') { sourceArr = lanes; resultDiv = document.getElementById('laneResult'); }
 
-      const select = document.getElementById(selectId);
-      const excluded = Array.from(select.selectedOptions).map(o => o.value);
+      // 判斷裝置：桌機用 checkbox，手機用 select
+      if(window.innerWidth >= 768){
+        // 桌機
+        excluded = Array.from(document.querySelectorAll(`#${type}List input[type=checkbox]:checked`)).map(c=>c.value);
+      } else {
+        // 手機
+        const select = document.getElementById(type+'Exclude');
+        excluded = Array.from(select.selectedOptions).map(o=>o.value);
+      }
+
       const available = sourceArr.filter(i => !excluded.includes(i));
-
       if(available.length === 0){
         alert("⚠️ 請至少保留一個可抽項目！");
         return;
       }
-
       resultDiv.textContent = getRandomItem(available);
     }
 
