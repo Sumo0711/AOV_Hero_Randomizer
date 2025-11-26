@@ -85,21 +85,24 @@ function renderLaneCheckbox() {
 
   // 全選
   const allLabel = document.createElement('label');
-  allLabel.innerHTML = `<input type="checkbox" id="laneSelectAll"> 全選`;
+  allLabel.innerHTML = `<input type="checkbox" id="laneSelectAll" checked> 全選`;
   container.appendChild(allLabel);
   const selectAllCheckbox = allLabel.querySelector('input');
   selectAllCheckbox.addEventListener('change', function() {
-    const laneCbs = container.querySelectorAll('input.itemCheckbox');
-    laneCbs.forEach(cb => { cb.checked = this.checked; });
+    container.querySelectorAll('input.itemCheckbox').forEach(cb => cb.checked = this.checked);
     filterHeroesByLane();
   });
 
-  // 普通分路
+  // 普通分路，預設勾全選
   lanes.forEach(lane=>{
     const label = document.createElement('label');
-    label.innerHTML = `<input type="checkbox" class="itemCheckbox" value="${lane}"> ${lane}`;
+    label.innerHTML = `<input type="checkbox" class="itemCheckbox" value="${lane}" checked> ${lane}`;
     container.appendChild(label);
-    label.querySelector('input').addEventListener('change', filterHeroesByLane);
+    label.querySelector('input').addEventListener('change', function(){ 
+      // 若全能勾選中則禁止更改普通分路
+      if(document.getElementById('laneAllPower').checked) this.checked = false;
+      filterHeroesByLane(); 
+    });
   });
 
   // 全能最後
@@ -143,12 +146,25 @@ function populateSelect(selectId, items){
     option.textContent = item;
     select.appendChild(option);
   });
+
+  // 手機端特殊邏輯
+  if(selectId==='laneSelect'){
+    select.addEventListener('change', function(){
+      const values = Array.from(this.selectedOptions).map(o=>o.value);
+      const drawBtn = document.getElementById('drawLaneBtn');
+      if(values.includes('全能')){
+        drawBtn.disabled=true;
+      } else {
+        drawBtn.disabled=false;
+      }
+      filterHeroesByLane(values);
+    });
+  }
 }
 
 function getRandomItem(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
 function drawLane(){
-  // 排除全選/全能
   const selected = getCheckedItems('lane').filter(l=>l!=='全能' && l!=='全選');
   if(selected.length === 0){
     alert("⚠️ 請至少勾選一個分路！");
@@ -187,8 +203,7 @@ function getCheckedItems(type){
 }
 
 function filterHeroesByLane(forcedLanes){
-  const selectedLanes = forcedLanes || getCheckedItems('lane');
-
+  let selectedLanes = forcedLanes || getCheckedItems('lane');
   const heroContainer = document.getElementById('heroList');
   const heroCheckboxes = heroContainer.querySelectorAll('input.itemCheckbox');
 
