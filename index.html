@@ -10,7 +10,6 @@ h1 { font-size: 2rem; margin-bottom: 20px; }
 h2 { font-size: 1.5rem; margin: 20px 0 10px; }
 button { background-color: #4CAF50; color: white; border: none; padding: 8px 16px; margin: 10px 0; border-radius: 6px; cursor: pointer; font-size: 1rem; }
 button:hover { background-color: #45a049; }
-button:disabled { background-color: #555; cursor: not-allowed; }
 .result { margin-top: 10px; font-size: 1.2rem; background: #222; padding: 10px; border-radius: 8px; display: inline-block; }
 .checkbox-list { display: flex; flex-wrap: wrap; justify-content: center; max-width: 600px; margin: 10px auto; background: #2a2a2a; padding: 8px; border-radius: 10px; }
 label { margin: 4px 10px; display: flex; align-items: center; }
@@ -69,7 +68,8 @@ async function loadData(){
     renderCheckboxWithAll('hero', heroes.map(h=>h.name));
     renderCheckboxWithAll('skill', skills);
 
-    populateSelect('laneSelect', ['全選', ...lanes, '全能'], ['全選']); // 手機端預設全選
+    // 手機 select
+    populateSelect('laneSelect', ['全選', ...lanes, '全能'], ['全選']);
     populateSelect('heroSelect', heroes.map(h=>h.name));
     populateSelect('skillSelect', skills);
 
@@ -218,9 +218,10 @@ function drawLane(){
 }
 
 function drawHero(){
-  const selected=getCheckedItems('hero');
-  if(selected.length===0){ alert("⚠️ 請至少勾選一個英雄！"); return; }
-  document.getElementById('heroResult').textContent=getRandomItem(selected);
+  const heroContainer=document.getElementById('heroList');
+  const visibleHeroes = Array.from(heroContainer.querySelectorAll('input.itemCheckbox')).filter(cb=>cb.parentElement.style.display!=='none').map(cb=>cb.value);
+  if(visibleHeroes.length===0){ alert("⚠️ 沒有可抽英雄！"); return; }
+  document.getElementById('heroResult').textContent=getRandomItem(visibleHeroes);
 }
 
 function drawSkill(){
