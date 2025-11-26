@@ -60,6 +60,7 @@ async function loadData(){
     heroes = data.heroes;
     skills = data.skills;
 
+    // 收集分路
     const laneSet = new Set();
     heroes.forEach(h=>h.lane.forEach(l=>laneSet.add(l)));
     lanes = Array.from(laneSet);
@@ -68,7 +69,7 @@ async function loadData(){
     renderCheckboxWithAll('hero', heroes.map(h=>h.name));
     renderCheckboxWithAll('skill', skills);
 
-    // 手機 select
+    // 手機 select 初始化
     populateSelect('laneSelect', ['全選', ...lanes, '全能'], ['全選']);
     populateSelect('heroSelect', heroes.map(h=>h.name));
     populateSelect('skillSelect', skills);
@@ -152,7 +153,7 @@ function populateSelect(selectId, items, preSelect=[]){
     select.appendChild(option);
   });
 
-  // 手機端分路
+  // 手機端分路事件
   if(selectId==='laneSelect'){
     select.addEventListener('change', function(){
       const values = Array.from(this.selectedOptions).map(o=>o.value);
@@ -160,9 +161,12 @@ function populateSelect(selectId, items, preSelect=[]){
       if(values.includes('全能')){
         drawBtn.disabled=true;
         showAllHeroes();
+      } else if(values.includes('全選')){
+        drawBtn.disabled=false;
+        filterHeroesByLane(lanes);
       } else {
         drawBtn.disabled=false;
-        filterHeroesByLane(values.includes('全選') ? lanes : values);
+        filterHeroesByLane(values);
       }
     });
   }
