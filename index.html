@@ -68,41 +68,40 @@ async function loadData(){
     renderCheckboxWithAll('hero', heroes.map(h=>h.name));
     renderCheckboxWithAll('skill', skills);
 
-    // 手機 select 初始化，直接全選
-    populateSelect('laneSelect', lanes, [...lanes]);
+    // 手機 select 初始化
+    populateSelect('laneSelect', lanes, [...lanes]); // 預選全分路
     populateSelect('heroSelect', heroes.map(h=>h.name));
     populateSelect('skillSelect', skills);
 
-    filterHeroesByLane(); // 初始化英雄列表
+    // 初始化英雄過濾
+    const selectedLanes = getCheckedLanes();
+    filterHeroesByLane(selectedLanes);
   } catch(err){
     console.error(err);
     alert("資料載入失敗");
   }
 }
 
+// 桌機 checkbox
 function renderLaneCheckbox(){
   const container=document.getElementById('laneList');
   container.innerHTML='';
-  const drawBtn=document.getElementById('drawLaneBtn');
-
-  // 桌機全選
   const allLabel=document.createElement('label');
   allLabel.innerHTML=`<input type="checkbox" id="laneSelectAll" checked> 全選`;
   container.appendChild(allLabel);
   const selectAllCheckbox = allLabel.querySelector('input');
   selectAllCheckbox.addEventListener('change', function(){
     container.querySelectorAll('input.itemCheckbox').forEach(cb=>cb.checked=this.checked);
-    filterHeroesByLane();
+    filterHeroesByLane(getCheckedLanes());
   });
 
-  // 普通分路
   lanes.forEach(lane=>{
     const label=document.createElement('label');
     label.innerHTML=`<input type="checkbox" class="itemCheckbox" value="${lane}" checked> ${lane}`;
     container.appendChild(label);
     label.querySelector('input').addEventListener('change', function(){
       selectAllCheckbox.checked=false;
-      filterHeroesByLane();
+      filterHeroesByLane(getCheckedLanes());
     });
   });
 }
@@ -117,7 +116,7 @@ function renderCheckboxWithAll(type, items){
   });
 }
 
-// 手機端 select
+// 手機 select
 function populateSelect(selectId, items, preSelect=[]){
   const select=document.getElementById(selectId);
   select.innerHTML='';
@@ -137,36 +136,36 @@ function populateSelect(selectId, items, preSelect=[]){
   }
 }
 
-function getCheckedItems(type){
+function getCheckedLanes(){
   if(window.innerWidth>=768){
-    return Array.from(document.querySelectorAll(`#${type}List input.itemCheckbox:checked`)).map(cb=>cb.value);
+    return Array.from(document.querySelectorAll('#laneList input.itemCheckbox:checked')).map(cb=>cb.value);
   } else {
-    const select=document.getElementById(type+'Select');
+    const select=document.getElementById('laneSelect');
     return Array.from(select.selectedOptions).map(o=>o.value);
   }
 }
 
 function filterHeroesByLane(selectedLanes){
-  selectedLanes = selectedLanes || getCheckedItems('lane');
+  if(!selectedLanes || selectedLanes.length===0) selectedLanes = getCheckedLanes();
   const heroContainer=document.getElementById('heroList');
-  const heroCheckboxes=heroContainer.querySelectorAll('input.itemCheckbox');
-  heroCheckboxes.forEach(cb=>{
-    const heroData=heroes.find(h=>h.name===cb.value);
-    if(heroData.lane.some(l=>selectedLanes.includes(l))){
-      cb.parentElement.style.display='flex';
+  heroContainer.querySelectorAll('label').forEach(label=>{
+    const cb = label.querySelector('input');
+    const heroData = heroes.find(h=>h.name===cb.value);
+    if(heroData && heroData.lane.some(l=>selectedLanes.includes(l))){
+      label.style.display='flex';
       cb.checked=true;
     } else {
-      cb.parentElement.style.display='none';
+      label.style.display='none';
       cb.checked=false;
     }
   });
 }
 
 function drawLane(){
-  const selected=getCheckedItems('lane');
+  const selected = getCheckedLanes();
   if(selected.length===0){ alert("⚠️ 請至少勾選一個分路！"); return; }
-  const lane=getRandomItem(selected);
-  document.getElementById('laneResult').textContent=lane;
+  const lane = getRandomItem(selected);
+  document.getElementById('laneResult').textContent = lane;
   filterHeroesByLane([lane]);
 }
 
@@ -178,9 +177,9 @@ function drawHero(){
 }
 
 function drawSkill(){
-  const selected=getCheckedItems('skill');
+  const selected = Array.from(document.querySelectorAll('#skillList input.itemCheckbox:checked')).map(cb=>cb.value);
   if(selected.length===0){ alert("⚠️ 請至少勾選一個技能！"); return; }
-  document.getElementById('skillResult').textContent=getRandomItem(selected);
+  document.getElementById('skillResult').textContent = getRandomItem(selected);
 }
 
 function getRandomItem(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
