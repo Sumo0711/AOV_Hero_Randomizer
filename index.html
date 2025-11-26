@@ -53,6 +53,7 @@ select { background: #2a2a2a; color: #fff; border: 1px solid #555; border-radius
 <script>
 let heroes=[], skills=[], lanes=[];
 
+// 載入資料
 async function loadData(){
   try{
     const response = await fetch('DB.json');
@@ -68,28 +69,32 @@ async function loadData(){
     renderCheckboxWithAll('hero', heroes.map(h=>h.name));
     renderCheckboxWithAll('skill', skills);
 
-    populateSelect('laneSelect', ['全選', ...lanes, '全能']);
+    populateSelect('laneSelect', ['全選', ...lanes, '全能'], ['全選']); // 手機端預設全選
     populateSelect('heroSelect', heroes.map(h=>h.name));
     populateSelect('skillSelect', skills);
 
+    filterHeroesByLane(); // 初始化英雄列表
   } catch(err){
     console.error(err);
     alert("資料載入失敗");
   }
 }
 
+// 分路 checkbox
 function renderLaneCheckbox(){
-  const container = document.getElementById('laneList');
+  const container=document.getElementById('laneList');
   container.innerHTML='';
-  const drawBtn = document.getElementById('drawLaneBtn');
+  const drawBtn=document.getElementById('drawLaneBtn');
 
   // 全選
-  const allLabel = document.createElement('label');
+  const allLabel=document.createElement('label');
   allLabel.innerHTML=`<input type="checkbox" id="laneSelectAll" checked> 全選`;
   container.appendChild(allLabel);
   const selectAllCheckbox = allLabel.querySelector('input');
   selectAllCheckbox.addEventListener('change', function(){
-    container.querySelectorAll('input.itemCheckbox').forEach(cb=>cb.checked=this.checked);
+    container.querySelectorAll('input.itemCheckbox').forEach(cb=>{ cb.checked=this.checked; cb.disabled=false; });
+    document.getElementById('laneAllPower').checked=false;
+    drawBtn.disabled=false;
     filterHeroesByLane();
   });
 
@@ -100,7 +105,7 @@ function renderLaneCheckbox(){
     container.appendChild(label);
     label.querySelector('input').addEventListener('change', function(){
       if(document.getElementById('laneAllPower').checked) this.checked=false;
-      document.getElementById('laneSelectAll').checked=false;
+      selectAllCheckbox.checked=false;
       filterHeroesByLane();
     });
   });
@@ -112,10 +117,7 @@ function renderLaneCheckbox(){
   const laneAllCheckbox=allLabel2.querySelector('input');
   laneAllCheckbox.addEventListener('change', function(){
     if(this.checked){
-      container.querySelectorAll('input.itemCheckbox').forEach(cb=>{
-        cb.checked=false;
-        cb.disabled=true;
-      });
+      container.querySelectorAll('input.itemCheckbox').forEach(cb=>{ cb.checked=false; cb.disabled=true; });
       selectAllCheckbox.checked=false;
       drawBtn.disabled=true;
       showAllHeroes();
@@ -139,20 +141,22 @@ function renderCheckboxWithAll(type, items){
 }
 
 // select renderer
-function populateSelect(selectId, items){
+function populateSelect(selectId, items, preSelect=[]){
   const select=document.getElementById(selectId);
   select.innerHTML='';
   items.forEach(item=>{
     const option=document.createElement('option');
-    option.value=item; option.textContent=item;
+    option.value=item;
+    option.textContent=item;
+    if(preSelect.includes(item)) option.selected=true;
     select.appendChild(option);
   });
 
-  // 手機端分路同步
+  // 手機端分路
   if(selectId==='laneSelect'){
     select.addEventListener('change', function(){
       const values = Array.from(this.selectedOptions).map(o=>o.value);
-      const drawBtn = document.getElementById('drawLaneBtn');
+      const drawBtn=document.getElementById('drawLaneBtn');
       if(values.includes('全能')){
         drawBtn.disabled=true;
         showAllHeroes();
@@ -162,28 +166,6 @@ function populateSelect(selectId, items){
       }
     });
   }
-}
-
-function getRandomItem(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-function drawLane(){
-  const selected=getCheckedItems('lane').filter(l=>l!=='全能' && l!=='全選');
-  if(selected.length===0){ alert("⚠️ 請至少勾選一個分路！"); return; }
-  const lane=getRandomItem(selected);
-  document.getElementById('laneResult').textContent=lane;
-  filterHeroesByLane([lane]);
-}
-
-function drawHero(){
-  const selected=getCheckedItems('hero');
-  if(selected.length===0){ alert("⚠️ 請至少勾選一個英雄！"); return; }
-  document.getElementById('heroResult').textContent=getRandomItem(selected);
-}
-
-function drawSkill(){
-  const selected=getCheckedItems('skill');
-  if(selected.length===0){ alert("⚠️ 請至少勾選一個技能！"); return; }
-  document.getElementById('skillResult').textContent=getRandomItem(selected);
 }
 
 function getCheckedItems(type){
@@ -226,6 +208,28 @@ function showAllHeroes(){
     cb.checked=true;
   });
 }
+
+function drawLane(){
+  const selected=getCheckedItems('lane').filter(l=>l!=='全能' && l!=='全選');
+  if(selected.length===0){ alert("⚠️ 請至少勾選一個分路！"); return; }
+  const lane=getRandomItem(selected);
+  document.getElementById('laneResult').textContent=lane;
+  filterHeroesByLane([lane]);
+}
+
+function drawHero(){
+  const selected=getCheckedItems('hero');
+  if(selected.length===0){ alert("⚠️ 請至少勾選一個英雄！"); return; }
+  document.getElementById('heroResult').textContent=getRandomItem(selected);
+}
+
+function drawSkill(){
+  const selected=getCheckedItems('skill');
+  if(selected.length===0){ alert("⚠️ 請至少勾選一個技能！"); return; }
+  document.getElementById('skillResult').textContent=getRandomItem(selected);
+}
+
+function getRandomItem(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
 loadData();
 </script>
